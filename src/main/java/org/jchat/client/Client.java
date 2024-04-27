@@ -9,15 +9,17 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 
 public class Client  {
 
+    private static final Logger LOG = Logger.getLogger(Client.class.getName());
 
     public void start() {
         try(AsynchronousSocketChannel client = AsynchronousSocketChannel.open()) {
             client.connect(new InetSocketAddress("localhost", 8080)).get(5, TimeUnit.SECONDS);
 
-            System.out.println("Connected to server. Sending message..");
+            LOG.info("Connected to server. Sending message..");
 
             String message = "Hello from client!";
 
@@ -26,7 +28,7 @@ public class Client  {
             Integer sent = client.write(buffer).get(5, TimeUnit.SECONDS);
 
             if (sent == -1) {
-                System.out.println("Error sending message");
+                LOG.severe("Error sending message");
             }
 
             buffer.clear();
@@ -36,7 +38,7 @@ public class Client  {
             byte[] read = new byte[buffer.remaining()];
             buffer.get(read);
 
-            System.out.println("Bytes read: " + Arrays.toString(read));
+            LOG.info("Bytes read: " + Arrays.toString(read));
             buffer.clear();
         } catch (IOException | ExecutionException | InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);

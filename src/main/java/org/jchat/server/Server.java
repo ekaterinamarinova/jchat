@@ -7,8 +7,11 @@ import java.nio.channels.*;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class Server {
+
+    private static final Logger LOG = Logger.getLogger(Server.class.getName());
 
     public void start() {
         try(final AsynchronousServerSocketChannel ass = AsynchronousServerSocketChannel.open(
@@ -16,13 +19,12 @@ public class Server {
             )
         ) {
             ass.bind(new InetSocketAddress(8080));
-
-            System.out.println("Server started, listening on port: " + ass.getLocalAddress().toString());
+            LOG.info("Server started, listening on port %p" + ass.getLocalAddress().toString());
 
             ass.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
                 @Override
                 public void completed(AsynchronousSocketChannel client, Void unused) {
-                    System.out.println("Client request accepted, delegating...");
+                    LOG.info("Client request accepted, delegating...");
                     ass.accept(null, this);
                     //handle client
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -31,7 +33,7 @@ public class Server {
                         public void completed(Integer numBytesRead, Void unused) {
                             //process read data
                             if (numBytesRead == -1) {
-                                System.out.println("Failed to read bytes into buffer!");
+                                LOG.severe("Failed to read bytes into buffer!");
                                 return;
                             }
 
@@ -39,7 +41,7 @@ public class Server {
                             byte[] bytesRead = new byte[numBytesRead];
                             buffer.get(bytesRead);
 
-                            System.out.println("Received message from client: " + new String(bytesRead));
+                            LOG.info("Received message from client: " + new String(bytesRead));
 
                             //flip buffer to make ready for writing
                             buffer.flip();
@@ -51,16 +53,16 @@ public class Server {
                                 public void completed(Integer bytesWritten, Void unused) {
                                     if (bytesWritten == -1) {
                                         //bad
-                                        System.out.println("Failed to write back echo. ");
+                                        LOG.severe("Failed to write back echo. ");
                                         return;
                                     }
 
-                                    System.out.println("Successfully written to the client");
+                                    LOG.info("Successfully written to the client");
                                 }
 
                                 @Override
                                 public void failed(Throwable throwable, Void unused) {
-                                    System.out.println("Writing back to client failed");
+                                    LOG.severe("Writing back to client failed");
                                 }
 
                             });
@@ -68,14 +70,14 @@ public class Server {
 
                         @Override
                         public void failed(Throwable throwable, Void unused) {
-                            System.out.println("Error reading into client buffer. " + throwable.getMessage());
+                            LOG.severe("Error reading into client buffer. " + throwable.getMessage());
                         }
                     });
                 }
 
                 @Override
                 public void failed(Throwable throwable, Void unused) {
-                    System.out.println("Error accepting connection! " + Arrays.toString(throwable.getStackTrace()));
+                    LOG.severe("Error accepting connection! " + Arrays.toString(throwable.getStackTrace()));
                 }
             });
 
